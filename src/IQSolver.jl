@@ -1,5 +1,9 @@
 module IQSolver
 
-# Write your package code here.
+using Images
+using Plots
+
+include("Data.jl")
+include("Solver.jl")
 
 end

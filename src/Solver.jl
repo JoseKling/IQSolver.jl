@@ -1,99 +1,92 @@
-export initialize, solve
-
-#---------------- Initialization -------------------
-function initialize()
-    pieces = Piece[]
-    push!(pieces, Piece([0 0; 0 1; 1 0]))
-    push!(pieces, Piece([0 0; 0 1; 0 2; 1 1]))
-    push!(pieces, Piece([0 0; 1 0; 1 1; 2 1]))
-    push!(pieces, Piece([0 0; 0 1; 0 2; 1 0]))
-    push!(pieces, Piece([0 0; 0 1; 0 2; 0 3; 1 1]))
-    push!(pieces, Piece([0 0; 0 1; 0 2; 1 0; 2 0]))
-    push!(pieces, Piece([0 0; 0 1; 0 2; 0 3; 1 0]))
-    push!(pieces, Piece([0 0; 0 1; 0 2; 1 0; 1 2]))
-    push!(pieces, Piece([0 0; 0 1; 0 2; 1 0; 1 1]))
-    push!(pieces, Piece([0 0; 0 1; 1 1; 1 2; 2 2]))
-    push!(pieces, Piece([0 0; 0 1; 1 1; 1 2; 2 1]))
-    push!(pieces, Piece([0 0; 0 1; 1 1; 1 2; 1 3]))
-    board = Board(fill(nothing, 5, 11))
-    return pieces, board
-end
-
-function solve(board::Board, pieces::Vector{Piece})
-    solved_board = copy(board)
-    current_piece = 1
-    while (current_piece <= length(pieces)) && (current_piece > 0)
-        placed_piece = false
-        while !placed_piece && (symmetries[current_piece] <= n_symmetries(pieces[current_piece]))
-            while !placed_piece && (positions[current_piece][1] <= height(solved_board))
-                while !placed_piece && (positions[current_piece][2] <= width(solved_board))
-                    check = check_piece(pieces[current_piece], 
-                                        symmetries[current_piece], 
-                                        positions[current_piece],
-                                        solved_board)
-                    if check
-                        place_piece!(solved_board, 
-                                     pieces[current_piece], 
-                                     symmetries[current_piece], 
-                                     positions[current_piece])
-                        current_piece += 1
-                        placed_piece = true
-                    else
-                        positions[current_piece][2] += 1
-                    end
-                end
-                if !placed_piece
-                    positions[current_piece][2] = 1
-                    positions[current_piece][1] += 1
-                end
-            end
-            if !placed_piece
-                positions[current_piece][2] = 1
-                positions[current_piece][1] = 1
-                symmetries[current_piece] += 1
-            end
-        end
-        if !placed_piece
-            symmetries[current_piece] = 1
-            positions[current_piece][2] = 1
-            positions[current_piece][1] = 1
-            current_piece -= 1
-            remove_piece!(solved_board, pieces[current_piece], symmetries[current_piece], positions[current_piece])
-            positions[current_piece][2] += 1
-        end
-        image(solved_board)
-    end 
-    if current_piece == 0
-        return nothing
+function solve!(board::Board, pieces::Vector{Piece}; shuffle=true)
+    filter!(x -> x ∉ board, pieces)
+    empty = empty_region(board)
+    n_cells_pieces = mapreduce(size, +, pieces)
+    @assert n_cells_pieces >= length(empty) "Not enough pieces to fill the board."
+    @assert n_cells_pieces <= length(empty) "Too many pieces for the board."
+    subregions = get_subregions(empty)
+    shuffle && shuffle!(pieces)
+    solved = solve!(board, subregions, pieces)
+    if solved
+        println("The board was successfully solved.")
     else
-        return Solution(pieces, positions, symmetries, solved_board)
+        println("The board was not solved.")
     end
+    return
 end
 
-function check_piece(piece::Piece, symmetry::Int, position::Vector{Int}, board::Board)
-    sym = piece.symmetries[symmetry]
-    if (maximum(sym[:,1]) + position[1] > height(board)) || (maximum(sym[:,2]) + position[2] > width(board))
-        return false
-    else
-        for i in 1:size(sym, 1)
-            if board.squares[(position .+ sym[i,:])...] !== nothing
-                return false
+function solve!(board::Board, subregions::Vector{Region}, pieces::Vector{Piece})
+    image(board)
+    isempty(subregions) && return true # Base case
+    sort!(subregions, by=length)
+    empty = popfirst!(subregions)
+    length(empty) <= 2 && return false # Trivial cases
+    (i, j) = reverse(minimum(reverse.(empty)))
+    for piece in pieces
+        for symm in piece.symmetries
+            if check_space(empty, symm .+ [i j])
+                place_piece!(board, empty, symm .+ [i j], piece)
+                solve!(board, append!(get_subregions(empty), subregions), filter(x -> x != piece, pieces)) && return true
+                remove_piece!(board, empty, symm .+ [i j])
             end
         end
     end
-    return true && check_regions(board, )
+    return false
 end
 
-function place_piece!(board::Board, piece::Piece, symmetry::Int, position::Vector{Int})
-    sym = piece.symmetries[symmetry]
-    for i in 1:size(sym, 1)
-        board.squares[(position .+ sym[i,:])...] = piece
+function solve(board::Board, pieces::Vector{Piece}; shuffle=true)
+    new_board = copy(board)
+    solve!(new_board, pieces, shuffle=shuffle)
+    return new_board
+end
+
+function place_piece!(board::Board, empty::Region, symmetry::Matrix{Int}, piece::Piece)
+    for (i, j) in eachrow(symmetry)
+        board[i, j] = piece
+        filter!(x -> x != (i, j), empty)
     end
 end
 
-function remove_piece!(board::Board, piece::Piece, symmetry::Int, position::Vector{Int})
-    sym = piece.symmetries[symmetry]
-    for i in 1:size(sym, 1)
-        board.squares[(position .+ sym[i,:])...] = nothing
+function remove_piece!(board::Board, empty::Region, symmetry::Matrix{Int})
+    for (i, j) in eachrow(symmetry)
+        board[i, j] = nothing
+        push!(empty, (i, j))
     end
+end
+
+function check_space(empty::Region, symm::Matrix{Int})
+    return all(map(x -> Tuple(x) in empty, eachrow(symm)))
+end
+
+function get_subregions(empty::Region)
+    return get_subregions(empty, Region[])
+end
+
+function get_subregions(empty::Region, acc::Vector{Region})
+    isempty(empty) && return acc # Base case
+    subregion = one_subregion!(empty)
+    return get_subregions(setdiff(empty, subregion), append!(acc, [subregion]))
+end
+
+function one_subregion!(region::Region)
+    return one_subregion!(region, [region[1]], [region[1]])
+end
+
+function one_subregion!(region::Region, subregion::Region, current::Region)
+    isempty(current) && return subregion # Base case
+    next = Cell[]
+    for (i, j) in collect(current)
+        for neighbor in [(1, 0), (-1, 0), (0, 1), (0, -1)]
+            if ((i, j) .+ neighbor ∈ region) && ((i, j) .+ neighbor ∉ subregion)
+                push!(subregion, (i, j) .+ neighbor)
+                push!(next, (i, j) .+ neighbor)
+            end
+        end
+    end
+    return one_subregion!(region, subregion, next)
+end
+
+function check_initialization(pieces::Vector{Piece}, board::Board)
+    board_pieces = [square for square in board.cells if square !== nothing]
+    @assert all(map(x -> x ∉ board_pieces, pieces)) "A piece from the list is already on the board."
 end

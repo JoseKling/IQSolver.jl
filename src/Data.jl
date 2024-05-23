@@ -1,15 +1,11 @@
-export Piece, Board, solution
-export n_squares, n_symmetries, height, width, shape, image
 
-mutable struct Piece
-    const squares::Matrix{Int}
-    const symmetries::Vector{Matrix{Int}}
-    const color::RGB
-    const position::Vector{Int}
-    symmetry::Int
-    function Piece(squares::Matrix{Int}, color::RGB)
-        squares[:,1] .-= minimum(squares[:,1])
-        squares[:,2] .-= minimum(squares[:,2])
+####################### Piece #################################################
+struct Piece
+    symmetries::Vector{Matrix{Int}}
+    color::Color
+
+    function Piece(squares::Matrix{Int}, color::RGB; shuffle=true)
+        normalize_piece!(squares)
         squares = sortslices(squares, dims=1)
         symmetries = Vector{Matrix{Int}}()
         next = squares
@@ -20,100 +16,72 @@ mutable struct Piece
             end
             next = reflect(next)
         end
-        new(squares, symmetries, color, [1, 1], 1)
+        shuffle && shuffle!(symmetries)
+        new(symmetries, color)
     end
-    function Piece(squares::Matrix{Int})
-        Piece(squares, rand(RGB{Float64}))
-    end
-end
 
-struct Board
-    squares::Matrix{Union{Piece, Nothing}}
-    regions::Set{Matrix{Int}}
-    function Board(squares::Matrix{Union{Piece, Nothing}})
-        regions = []
-        pl_holder = Piece([0,0])
-        cp_squares = copy(squares)
-        while any(x -> x === nothing, cp_squares)
-            start_idx = findfirst(x -> x === nothing, cp_squares)
-            start = [start_idx.I[1], start_idx.I[2]]
-            region = [start]
-            cp_squares[start...] = pl_holder
-            to_check = [start]
-            while !isempty(to_check)
-                current = pop!(to_check)
-                to_add = [current .+ [1, 0], current .+ [0, 1], current .+ [-1, 0], current .+ [0, -1]]
-                select(x) = (x[1] > 0) && 
-                            (x[2] > 0) && 
-                            (x[1] <= size(squares, 1)) && 
-                            (x[2] <= size(squares, 2)) && 
-                            (squares[x...] !== nothing)
-                filter!(select, to_add)
-                for position in select
-                    cp_squares[position...] = pl_holder
-                end
-                region = [region; to_add]
-                to_check = [to_check; to_add]
-            end
-            push!(regions, region)
-        end
-    new(squares, regions)
+    function Piece(squares::Matrix{Int}; shuffle=true)
+        Piece(squares, rand(RGB{Float64}), shuffle=shuffle)
     end
 end
 
-struct Solution
-    pieces::Vector{Piece}
-    positions::Vector{Vector{Int}}
-    symmetries::Vector{Int}
-    board::Board
-end
-
-function n_symmetries(piece::Piece)
-    return length(piece.symmetries)
-end
-
-function n_squares(piece::Piece)
-    return size(piece.symmetries[1], 1)
-end
-
-function shape(board::Board)
-    return size(board.squares)
-end
-
-function width(board::Board)
-    return size(board.squares, 2)
-end
-
-function height(board::Board)
-    return size(board.squares, 1)
-end
-
-function copy(board::Board)
-    return Board(copy(board.squares), copy(board.regions))
-end
-
-function image(board::Board)
-    p = plot(map(x -> x === nothing ? RGB(0.0, 0.0, 0.0) : x.color, board.squares), axis=([], false))  
-    display(p)
-end
+Base.length(p::Piece) = length(p.symmetries)
+Base.iterate(p::Piece, state=1) =
+    state > length(p) ? nothing : (p.symmetries[state], state + 1)
+Base.size(p::Piece) = size(p.symmetries[1], 1)
 
 function rotate(squares::Matrix{Int})
-    rotated = []
-    for square in eachrow(squares)
-        new_square = [square[2] -square[1]]
-        rotated = [rotated; new_square]
-    end
-    rotated[:,1] .-= minimum(rotated[:,1])
-    rotated[:,2] .-= minimum(rotated[:,2])
+    rotated = [squares[:, 2] -squares[:, 1]]
+    normalize_piece!(rotated)
     rotated = sortslices(rotated, dims=1)
     return Matrix{Int}(rotated)
 end
 
 function reflect(squares::Matrix{Int})
-    reflected = squares
-    reflected[:,1] = -reflected[:,1]
-    reflected[:,1] .-= minimum(reflected[:,1])
-    reflected[:,2] .-= minimum(reflected[:,2])
+    reflected = [-squares[:, 1] squares[:, 2]]
+    normalize_piece!(reflected)
     reflected = sortslices(reflected, dims=1)
     return reflected
 end
+
+"""
+This function takes a symmetry that might be translated an indefinite ammount
+in any direction and makes it so that all the first coordinates are non-negative
+and one of the cells is the origin.
+"""
+function normalize_piece!(squares::Matrix{Int})
+    squares[:, 2] .-= minimum(squares[:, 2])
+    squares[:, 1] .-= minimum(squares[squares[:, 2].==0, 1])
+end
+
+###################### Board ##################################################
+Board = Matrix{Union{Nothing,Piece}}
+Cell = Tuple{Int,Int}
+Region = Vector{Cell}
+
+function make_board(height::Int, width::Int)
+    return Board(fill(nothing, height, width))
+end
+
+function make_board(height::Int, width::Int,
+    filled::Dict{Piece,Region})
+    board = make_board(height, width)
+    for (piece, cells) in filled
+        for cell in cells
+            board[cell...] = piece
+        end
+    end
+    return board
+end
+
+shape(board::Board) = size(board)
+width(board::Board) = size(board, 2)
+height(board::Board) = size(board, 1)
+empty_region(board::Board) = [(i, j) for i in 1:height(board), j in 1:width(board) if board[i, j] === nothing]
+
+function image(board::Board)
+    p = plot(map(x -> x === nothing ? RGB(0.0, 0.0, 0.0) : x.color, board),
+        axis=([], false))
+    display(p)
+end
+

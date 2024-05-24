@@ -66,11 +66,7 @@ end
 function make_board(height::Int, width::Int,
     filled::Dict{Piece,Region})
     board = make_board(height, width)
-    for (piece, cells) in filled
-        for cell in cells
-            board[cell...] = piece
-        end
-    end
+    fill_board!(board, filled)
     return board
 end
 
@@ -85,3 +81,10 @@ function image(board::Board)
     display(p)
 end
 
+function fill_board!(board::Board, filled::Dict{Piece,Region})
+    for (piece, cells) in filled
+        for (i, j) in cells
+            board[10-i, j] = piece
+        end
+    end
+end

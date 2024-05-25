@@ -1,4 +1,4 @@
-# IQSolver
+# [IQSolver](https://josekling.github.io/IQSolver.jl)
 
 This is a simple package for solving the [IQ Puzzler Pro](https://www.smartgames.eu/uk/one-player-games/iq-puzzler-pro)
 game.
@@ -24,3 +24,5 @@ And then simply run this command to solve a specific stage.
 ```julia
 solve(80)
 ```
+
+For more information, check out the [**Documentation**](https://josekling.github.io/IQSolver.jl).

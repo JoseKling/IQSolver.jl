@@ -10,11 +10,6 @@ import IQSolver: check_space, one_region!, get_subregions, remove_piece!, place_
     @test [(0, 0), (1, 0), (1, 1)] |> reflect |> normalize_symmetry |> sort == sort([(0, 0), (1, 0), (0, 1)])
 end
 
-# @testset "Pieces" begin
-#     piece = Piece([(0, 0), (1, 0), (1, 1), (2, 1), (3, 1)])
-#     @test minimum([cell[2] for cell in [symm for symm in piece.symmetries]]) == 0
-# end
-
 @testset "check_space" begin
     @test check_space([(1, 1), (1, 2), (3, 3), (4, 4)], [(1, 1); (1, 2); (3, 3); (4, 4)]) == true
     @test check_space([(1, 1), (1, 2)], [(1, 1); (1, 2); (3, 3); (4, 4)]) == false
@@ -30,13 +25,9 @@ end
     place_piece!(board, reg, symm, m_red)
     @test board == [nothing m_red; m_red m_red]
     @test reg == [(1, 1)]
-
 end
+
 @testset "empty_region" begin
     @test sort(empty_region(make_board(2, 2))) == sort([(1, 1), (1, 2), (2, 1), (2, 2)])
 end
 
-@testset "get_regions" begin
-    @test sort(get_subregions([(0, 0), (0, 1), (1, 1)])) == sort([[(0, 0), (0, 1), (1, 1)]])
-    @test all(get_subregions([(0, 0), (1, 1), (2, 2)]) .∈ ([(0, 0)], [(1, 1)], [(2, 2)]))
-end

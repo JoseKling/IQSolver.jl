@@ -23,5 +23,4 @@ jobs:
       - name: Install dependencies
         run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy
-        env:
         run: julia --project=docs/ docs/make.jl

@@ -1,3 +1,26 @@
 # IQSolver
 
-[![Build Status](https://github.com/JoseKling/IQSolver.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JoseKling/IQSolver.jl/actions/workflows/CI.yml?query=branch%3Amain)
+This is a simple package for solving the [IQ Puzzler Pro](https://www.smartgames.eu/uk/one-player-games/iq-puzzler-pro)
+game.
+
+It uses a [backtracking algorithm](https://en.wikipedia.org/wiki/Backtracking)
+to solve the game, recursing on disconnected empty regions on the board. It shows
+the process of finding a solution, which is quite addictive to stare at.
+
+For now it can only solve the 2D puzzles and only some levels from this specific
+variant of the game are implemented. This can probably be easily extended to 
+other variants.
+
+To see it in action, first install it.
+
+```julia
+using Pkg
+Pkg.add("https://github.com/JoseKling/IQSolver.jl.git")
+using IQSolver
+```
+
+And then simply run this command to solve a specific stage.
+
+```julia
+solve(80)
+```

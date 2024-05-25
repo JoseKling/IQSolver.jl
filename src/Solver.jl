@@ -1,12 +1,12 @@
 function solve!(board::Board, pieces::Vector{Piece}; shuffle=true)
-    filter!(x -> x ∉ board, pieces)
+    ps = filter(x -> x ∉ board, pieces)
     empty = empty_region(board)
-    n_cells_pieces = mapreduce(size, +, pieces)
+    n_cells_pieces = mapreduce(size, +, ps)
     @assert n_cells_pieces >= length(empty) "Not enough pieces to fill the board."
     @assert n_cells_pieces <= length(empty) "Too many pieces for the board."
     subregions = get_subregions(empty)
     shuffle && shuffle!(pieces)
-    solved = solve!(board, subregions, pieces)
+    solved = solve!(board, subregions, ps)
     if solved
         println("The board was successfully solved.")
     else
@@ -24,10 +24,12 @@ function solve!(board::Board, subregions::Vector{Region}, pieces::Vector{Piece})
     (i, j) = reverse(minimum(reverse.(empty)))
     for piece in pieces
         for symm in piece.symmetries
-            if check_space(empty, symm .+ [i j])
-                place_piece!(board, empty, symm .+ [i j], piece)
-                solve!(board, append!(get_subregions(empty), subregions), filter(x -> x != piece, pieces)) && return true
-                remove_piece!(board, empty, symm .+ [i j])
+            translated = map(cell -> cell .+ (i, j), symm)
+            if check_space(empty, translated)
+                place_piece!(board, empty, translated, piece)
+                solve!(board, append!(get_subregions(empty), subregions),
+                    filter(x -> x != piece, pieces)) && return true
+                remove_piece!(board, empty, translated)
             end
         end
     end
@@ -40,22 +42,24 @@ function solve(board::Board, pieces::Vector{Piece}; shuffle=true)
     return new_board
 end
 
-function place_piece!(board::Board, empty::Region, symmetry::Matrix{Int}, piece::Piece)
-    for (i, j) in eachrow(symmetry)
+solve(board::Board) = solve(board, game_pieces)
+
+function place_piece!(board::Board, empty::Region, symmetry::Region, piece::Piece)
+    for (i, j) in symmetry
         board[i, j] = piece
         filter!(x -> x != (i, j), empty)
     end
 end
 
-function remove_piece!(board::Board, empty::Region, symmetry::Matrix{Int})
-    for (i, j) in eachrow(symmetry)
+function remove_piece!(board::Board, empty::Region, symmetry::Region)
+    for (i, j) in symmetry
         board[i, j] = nothing
         push!(empty, (i, j))
     end
 end
 
-function check_space(empty::Region, symm::Matrix{Int})
-    return all(map(x -> Tuple(x) in empty, eachrow(symm)))
+function check_space(empty::Region, symm::Region)
+    return all(map(cell -> cell ∈ empty, symm))
 end
 
 function get_subregions(empty::Region)
@@ -86,7 +90,3 @@ function one_subregion!(region::Region, subregion::Region, current::Region)
     return one_subregion!(region, subregion, next)
 end
 
-function check_initialization(pieces::Vector{Piece}, board::Board)
-    board_pieces = [square for square in board.cells if square !== nothing]
-    @assert all(map(x -> x ∉ board_pieces, pieces)) "A piece from the list is already on the board."
-end

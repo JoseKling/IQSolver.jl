@@ -1,15 +1,28 @@
 using IQSolver
 using Test
-import IQSolver: check_space, one_region!, get_subregions, remove_piece!, place_piece!
+import IQSolver: check_space, one_region!, get_subregions, remove_piece!, place_piece!, rotate, reflect, normalize_symmetry
+
+@testset "rotate/reflect/normalize" begin
+    @test normalize_symmetry([(-1, -2)]) == [(0, 0)]
+    @test normalize_symmetry([(-1, 2), (0, -1), (-1, 1)]) == [(-1, 3), (0, 0), (-1, 2)]
+    @test normalize_symmetry([(-1, 2), (2, -1), (-1, 1)]) == [(-3, 3), (0, 0), (-3, 2)]
+    @test [(0, 0), (1, 0), (1, 1)] |> rotate |> normalize_symmetry |> sort == sort([(0, 0), (1, 0), (0, 1)])
+    @test [(0, 0), (1, 0), (1, 1)] |> reflect |> normalize_symmetry |> sort == sort([(0, 0), (1, 0), (0, 1)])
+end
+
+# @testset "Pieces" begin
+#     piece = Piece([(0, 0), (1, 0), (1, 1), (2, 1), (3, 1)])
+#     @test minimum([cell[2] for cell in [symm for symm in piece.symmetries]]) == 0
+# end
 
 @testset "check_space" begin
-    @test check_space([(1, 1), (1, 2), (3, 3), (4, 4)], [1 1; 1 2; 3 3; 4 4]) == true
-    @test check_space([(1, 1), (1, 2)], [1 1; 1 2; 3 3; 4 4]) == false
+    @test check_space([(1, 1), (1, 2), (3, 3), (4, 4)], [(1, 1); (1, 2); (3, 3); (4, 4)]) == true
+    @test check_space([(1, 1), (1, 2)], [(1, 1); (1, 2); (3, 3); (4, 4)]) == false
 end
 
 @testset "remove/place_piece!" begin
     board = [nothing m_red; m_red m_red]
-    symm = [1 2; 2 2; 2 1]
+    symm = [(1, 2); (2, 2); (2, 1)]
     reg = [(1, 1)]
     remove_piece!(board, reg, symm)
     @test board == [nothing nothing; nothing nothing]
@@ -25,5 +38,5 @@ end
 
 @testset "get_regions" begin
     @test sort(get_subregions([(0, 0), (0, 1), (1, 1)])) == sort([[(0, 0), (0, 1), (1, 1)]])
-    @test all(get_subregions([(0, 0), (1, 1), (2, 2)]) .∈ [[(0, 0)], [(1, 1)], [(2, 2)]])
+    @test all(get_subregions([(0, 0), (1, 1), (2, 2)]) .∈ ([(0, 0)], [(1, 1)], [(2, 2)]))
 end

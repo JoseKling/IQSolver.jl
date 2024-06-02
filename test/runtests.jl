@@ -4,8 +4,8 @@ import IQSolver: check_space, one_region!, get_subregions, remove_piece!, place_
 
 @testset "rotate/reflect/normalize" begin
     @test normalize_symmetry([(-1, -2)]) == [(0, 0)]
-    @test normalize_symmetry([(-1, 2), (0, -1), (-1, 1)]) == [(-1, 3), (0, 0), (-1, 2)]
-    @test normalize_symmetry([(-1, 2), (2, -1), (-1, 1)]) == [(-3, 3), (0, 0), (-3, 2)]
+    @test normalize_symmetry([(-1, 2), (0, -1), (-1, 1)]) == [(0, 1), (1, -2), (0, 0)]
+    @test normalize_symmetry([(-1.0, 2.0, 1.0), (2.0, -1.0, 2.0), (-1.0, 1.0, 0.0)]) == [(0, 1, 1), (3, -2, 2), (0, 0, 0)]
     @test [(0, 0), (1, 0), (1, 1)] |> rotate |> normalize_symmetry |> sort == sort([(0, 0), (1, 0), (0, 1)])
     @test [(0, 0), (1, 0), (1, 1)] |> reflect |> normalize_symmetry |> sort == sort([(0, 0), (1, 0), (0, 1)])
 end
@@ -31,3 +31,7 @@ end
     @test sort(empty_region(make_board(2, 2))) == sort([(1, 1), (1, 2), (2, 1), (2, 2)])
 end
 
+@testset "subregions" begin
+    length(get_subregions(collect(keys(pyramid_board())))) == 1
+    sort(get_subregions(colelct(keys(pyramid_board())))[1]) == sort(collect(keys(pyramid_board())))
+end

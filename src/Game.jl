@@ -11,18 +11,18 @@ const m_purple = Piece([(0, 0); (0, 1); (1, 1); (1, 2); (2, 2)], colorant"purple
 const m_orange = Piece([(0, 0); (0, 1); (1, 1); (1, 2); (2, 1)], colorant"orange")
 const m_pink = Piece([(0, 0); (0, 1); (1, 1); (1, 2); (1, 3)], colorant"lightpink1")
 
-const l_blue3D = Piece([(0.0, 0.0, 0.0); (0.0, 1.0, 0.0); (1.0, 0.0, 0.0)], colorant"lightskyblue1")
-const m_blue3D = Piece([(0.0, 0.0, 0.0); (0.0, 1.0, 0.0); (0.0, 2.0, 0.0); (1.0, 0.0, 0.0); (2.0, 0.0, 0.0)], colorant"dodgerblue")
-const d_blue3D = Piece([(0.0, 0.0, 0.0); (0.0, 1.0, 0.0); (0.0, 2.0, 0.0); (1.0, 0.0, 0.0)], colorant"darkblue")
-const l_green3D = Piece([(0.0, 0.0, 0.0); (0.0, 1.0, 0.0); (0.0, 2.0, 0.0); (1.0, 0.0, 0.0); (1.0, 1.0, 0.0)], colorant"darkseagreen1")
-const m_green3D = Piece([(0.0, 0.0, 0.0); (0.0, 1.0, 0.0); (0.0, 2.0, 0.0); (1.0, 0.0, 0.0); (1.0, 2.0, 0.0)], colorant"olivedrab2")
-const d_green3D = Piece([(0.0, 0.0, 0.0); (0.0, 1.0, 0.0); (0.0, 2.0, 0.0); (1.0, 1.0, 0.0)], colorant"teal")
-const m_red3D = Piece([(0.0, 0.0, 0.0); (0.0, 1.0, 0.0); (0.0, 2.0, 0.0); (0.0, 3.0, 0.0); (1.0, 0.0, 0.0)], colorant"red")
-const d_red3D = Piece([(0.0, 0.0, 0.0); (1.0, 0.0, 0.0); (1.0, 1.0, 0.0); (2.0, 1.0, 0.0)], colorant"red4")
-const m_yellow3D = Piece([(0.0, 0.0, 0.0); (0.0, 1.0, 0.0); (0.0, 2.0, 0.0); (0.0, 3.0, 0.0); (1.0, 1.0, 0.0)], colorant"yellow")
-const m_purple3D = Piece([(0.0, 0.0, 0.0); (0.0, 1.0, 0.0); (1.0, 1.0, 0.0); (1.0, 2.0, 0.0); (2.0, 2.0, 0.0)], colorant"purple4")
-const m_orange3D = Piece([(0.0, 0.0, 0.0); (0.0, 1.0, 0.0); (1.0, 1.0, 0.0); (1.0, 2.0, 0.0); (2.0, 1.0, 0.0)], colorant"orange")
-const m_pink3D = Piece([(0.0, 0.0, 0.0); (0.0, 1.0, 0.0); (1.0, 1.0, 0.0); (1.0, 2.0, 0.0); (1.0, 3.0, 0.0)], colorant"lightpink1")
+const l_blue3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), l_blue.symmetries[1]), colorant"lightskyblue1")
+const m_blue3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), m_blue.symmetries[1]), colorant"dodgerblue")
+const d_blue3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), d_blue.symmetries[1]), colorant"darkblue")
+const l_green3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), l_green.symmetries[1]), colorant"darkseagreen1")
+const m_green3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), m_green.symmetries[1]), colorant"olivedrab2")
+const d_green3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), d_green.symmetries[1]), colorant"teal")
+const m_red3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), m_red.symmetries[1]), colorant"red")
+const d_red3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), d_red.symmetries[1]), colorant"red4")
+const m_yellow3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), m_yellow.symmetries[1]), colorant"yellow")
+const m_purple3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), m_purple.symmetries[1]), colorant"purple4")
+const m_orange3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), m_orange.symmetries[1]), colorant"orange")
+const m_pink3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), m_pink.symmetries[1]), colorant"lightpink1")
 
 """
 List of all the pieces in the original game.
@@ -64,26 +64,28 @@ game_pieces(T::Type) = T == Cell2D ? game_pieces2D : game_pieces3D
 
 "Creates an empty rectangular board"
 function rectangular_board()
-    cells = [(x, y) for x in 1:11 for y in 1:5]
+    cells = [(x, y) for x in 0:10 for y in 0:4]
     return Board{Cell2D}(cells .=> nothing)
 end
 
+"Creates an empty diagonal board (the one on the back of the game)"
 function diagonal_board()
-    board = Dict{Cell2D,Union{Piece,Nothing}}()
-    [board[(i, 1)] = nothing for i in 2:5]
-    [board[(i, 2)] = nothing for i in 1:5]
-    [board[(i, 3)] = nothing for i in 1:7]
-    [board[(i, 4)] = nothing for i in 1:7]
-    [board[(i, 5)] = nothing for i in 1:9]
-    [board[(i, 6)] = nothing for i in 3:9]
-    [board[(i, 7)] = nothing for i in 3:9]
-    [board[(i, 8)] = nothing for i in 5:9]
-    [board[(i, 9)] = nothing for i in 5:8]
+    board = Dict{Cell2D,Union{Color,Nothing}}()
+    [board[(i, 0)] = nothing for i in 1:4]
+    [board[(i, 1)] = nothing for i in 0:4]
+    [board[(i, 2)] = nothing for i in 0:6]
+    [board[(i, 3)] = nothing for i in 0:6]
+    [board[(i, 4)] = nothing for i in 0:8]
+    [board[(i, 5)] = nothing for i in 2:8]
+    [board[(i, 6)] = nothing for i in 2:8]
+    [board[(i, 7)] = nothing for i in 4:8]
+    [board[(i, 8)] = nothing for i in 4:7]
     return board
 end
 
+"Creates a pyramid board"
 function pyramid_board()
-    cells = [(x + ((z - 1) / 2), y + ((z - 1) / 2), 1 + ((z - 1))) for z in 1:5 for x in 1:6-z for y in 1:6-z]
+    cells = [(x + z, y + z, z) for z in 0:4 for x in 0:2:8-(2*z) for y in 0:2:8-(2*z)]
     return Board{Cell3D}(cells .=> nothing)
 end
 
@@ -105,6 +107,7 @@ function diagonal_board(filled::Dict{Piece{Cell2D},Region{Cell2D}})
     return board
 end
 
+"Builds the game's 3D pyramid board board filled with the provided `Piece`s."
 function pyramid_board(filled::Dict{Piece{Cell3D},Region{Cell3D}})
     board = pyramid_board()
     fill_board!(board, filled)
@@ -118,26 +121,27 @@ build_stage(stage::Int) = stages[stage][1](stages[stage][2])
 
 "Where all the stages configurations are stored"
 const stages = Dict(
-    38 => (rectangular_board,
-        Dict(d_blue => [(1, 5), (1, 4), (1, 3), (2, 3)],
-            m_yellow => [(3, 3), (4, 3), (5, 3), (6, 3), (4, 2)])),
-    39 => (rectangular_board,
-        Dict(d_blue => [(1, 5), (2, 5), (3, 5), (3, 4)],
-            m_red => [(3, 3), (4, 3), (5, 3), (6, 3), (6, 2)])),
-    40 => (rectangular_board,
-        Dict(l_green => [(1, 5), (1, 4), (1, 3), (2, 4), (2, 3)],
-            m_yellow => [(3, 3), (4, 3), (5, 3), (6, 3), (5, 2)])),
-    80 => (diagonal_board,
-        Dict(m_orange => [(4, 2), (5, 2), (5, 3), (6, 3), (5, 4)],
-            m_blue => [(6, 4), (6, 5), (6, 6), (5, 6), (4, 6)])),
-    99 => (pyramid_board,
-        Dict{Piece{Cell3D},Region{Cell3D}}(
-            m_pink3D => [(1.0, 1.0, 1.0), (2.0, 1.0, 1.0), (3.0, 1.0, 1.0), (3.0, 2.0, 1.0), (4.0, 2.0, 1.0)],
-            m_green3D => [(4.0, 1.0, 1.0), (5.0, 1.0, 1.0), (5.0, 2.0, 1.0), (5.0, 3.0, 1.0), (4.0, 3.0, 1.0)],
-            m_orange3D => [(1.0, 4.0, 1.0), (1.0, 3.0, 1.0), (2.0, 3.0, 1.0), (2.0, 2.0, 1.0), (3.0, 3.0, 1.0)],
-            d_red3D => [(1.0, 5.0, 1.0), (2.0, 5.0, 1.0), (2.0, 4.0, 1.0), (3.0, 4.0, 1.0)],
-            l_green3D => [(3.0, 5.0, 1.0), (4.0, 5.0, 1.0), (5.0, 5.0, 1.0), (4.0, 4.0, 1.0), (5.0, 4.0, 1.0)],
-            m_red3D => [(1.5, 4.5, 2), (1.5, 3.5, 2), (2.5, 4.5, 2), (3.5, 4.5, 2), (4.5, 4.5, 2)],
-            m_blue3D => [(2.5, 1.5, 2), (3.5, 1.5, 2), (4.5, 1.5, 2), (4.5, 2.5, 2), (4.5, 3.5, 2)]))
+    38 => (rectangular_board, Dict{Piece{Cell2D},Region{Cell2D}}(
+        d_blue => [(0, 4), (0, 3), (0, 2), (1, 2)],
+        m_yellow => [(2, 2), (3, 2), (4, 2), (5, 2), (3, 1)])),
+    39 => (rectangular_board, Dict{Piece{Cell2D},Region{Cell2D}}(
+        d_blue => [(0, 4), (1, 4), (2, 4), (2, 3)],
+        m_red => [(2, 2), (3, 2), (4, 2), (5, 2), (5, 1)])),
+    40 => (rectangular_board, Dict{Piece{Cell2D},Region{Cell2D}}(
+        l_green => [(0, 4), (0, 3), (0, 2), (1, 3), (1, 2)],
+        m_yellow => [(2, 2), (3, 2), (4, 2), (5, 2), (4, 1)])),
+    80 => (diagonal_board, Dict{Piece{Cell2D},Region{Cell2D}}(
+        m_orange => [(3, 1), (4, 1), (4, 2), (5, 2), (4, 3)],
+        m_blue => [(5, 3), (5, 4), (5, 5), (4, 5), (3, 5)])),
+    99 => (pyramid_board, Dict{Piece{Cell3D},Region{Cell3D}}(
+        m_pink3D => [(0, 0, 0), (2, 0, 0), (4, 0, 0), (4, 2, 0), (6, 2, 0)],
+        m_green3D => [(6, 0, 0), (8, 0, 0), (8, 2, 0), (8, 4, 0), (6, 4, 0)],
+        m_orange3D => [(0, 6, 0), (0, 4, 0), (2, 4, 0), (2, 2, 0), (4, 4, 0)],
+        d_red3D => [(0, 8, 0), (2, 8, 0), (2, 6, 0), (4, 6, 0)],
+        l_green3D => [(4, 8, 0), (6, 8, 0), (8, 8, 0), (6, 6, 0), (8, 6, 0)],
+        m_red3D => [(1, 7, 1), (1, 5, 1), (3, 7, 1), (5, 7, 1), (7, 7, 1)],
+        m_blue3D => [(3, 1, 1), (5, 1, 1), (7, 1, 1), (7, 3, 1), (7, 5, 1)])),
+    120 => (pyramid_board, Dict{Piece{Cell3D},Region{Cell3D}}(
+        m_yellow3D => [(2, 4, 0), (4, 4, 0), (6, 4, 0), (8, 4, 0), (6, 6, 0)]))
 )
 

@@ -24,8 +24,6 @@ successfully.
 """
 function solve!(board::Board{T}, subregions::Vector{Region{T}},
     pieces::Vector{Piece{T}}) where {T<:Cell}
-    image(board)
-    # sleep(1)
     isempty(subregions) && return true # Base case
     sort!(subregions, by=length)
     empty = popfirst!(subregions)
@@ -54,7 +52,7 @@ already on the `Board` are discarded.
 - Number -> Solves the corresponding game's stage.
 """
 function solve(board::Board{T}, pieces::Vector{Piece{T}};
-    shuffle=true) where {T<:Cell}
+    shuffle::Bool=true) where {T<:Cell}
     board_cp = deepcopy(board)
     ps = filter(x -> x.color ∉ values(board_cp), pieces)
     empty = empty_region(board_cp)
@@ -63,21 +61,33 @@ function solve(board::Board{T}, pieces::Vector{Piece{T}};
     @assert n_cells_pieces <= length(empty) "Too many pieces for the board."
     subregions = get_subregions(empty)
     shuffle && shuffle!(ps)
+    image(board_cp)
     solved = solve!(board_cp, subregions, ps)
     if solved
         println("The board was successfully solved.")
     else
         println("The board was not solved.")
     end
+    image(board_cp)
     return board_cp
 end
-solve(board::Board{T}) where {T<:Cell} = solve(board, game_pieces(T))
+
+solve(board::Board{T}) where {T<:Cell} =
+    solve(board, game_pieces(T))
 function solve(stage::Int)
     board = build_stage(stage)
     pieces = game_pieces(eltype(keys(board)))
-    solve(board, pieces)
+    return solve(board, pieces)
 end
 
+"""
+Determines the order in which the board will be filled.
+For different board shapes, a different order might be better.
+"""
+next_cell(empty::Region{Cell2D}) = minimum(empty)
+next_cell(empty::Region{Cell3D}) = sort(empty, by=c -> (c[3], c[2], c[1]))[end]
+
+"Place a single piece on the board"
 function place_piece!(board::Board{T}, empty::Region{T}, symmetry::Region{T},
     piece::Piece{T}) where {T<:Cell}
     for cell in symmetry
@@ -86,6 +96,7 @@ function place_piece!(board::Board{T}, empty::Region{T}, symmetry::Region{T},
     end
 end
 
+"Remove one piece from the board"
 function remove_piece!(board::Board{T}, empty::Region{T},
     symmetry::Region{T}) where {T<:Cell}
     for cell in symmetry
@@ -137,13 +148,14 @@ function one_subregion(region::Region{T}, subregion::Region{T},
     return one_subregion(region, subregion, next)
 end
 
+"Returns all the adjacent cells from a given cell"
 function neighbors(cell::Cell2D)
     return map(x -> x .+ cell, [(1, 0), (-1, 0), (0, 1), (0, -1)])
 end
 
 function neighbors(cell::Cell3D)
-    adjacent = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0),
-        (0.5, 0.5, 1), (-0.5, 0.5, 1), (0.5, -0.5, 1), (-0.5, -0.5, 1),
-        (0.5, 0.5, -1), (-0.5, 0.5, -1), (0.5, -0.5, -1), (-0.5, -0.5, -1)]
+    adjacent = [(2, 0, 0), (-2, 0, 0), (0, 2, 0), (0, -2, 0),
+        (1, 1, 1), (-1, 1, 1), (1, -1, 1), (-1, -1, 1),
+        (1, 1, -1), (-1, 1, -1), (1, -1, -1), (-1, -1, -1)]
     return map(x -> x .+ cell, adjacent)
 end

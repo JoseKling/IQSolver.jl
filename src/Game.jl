@@ -122,7 +122,17 @@ end
 
 ######################### Stages ##############################################
 "Returns the board with the configuration of each stage in the game"
-build_stage(stage::Int) = stages[stage][1](stages[stage][2])
+function build_stage(stage::Int)
+    if stage ∉ keys(stages)
+        msg = "This stage is not implemented yet. Choose from:\n"
+        for stage in sort(collect(keys(stages)))
+            msg *= "- $(stage)\n"
+        end
+        error(msg)
+    end
+    return stages[stage][1](stages[stage][2])
+end
+
 
 "Where all the stages configurations are stored"
 const stages = Dict(

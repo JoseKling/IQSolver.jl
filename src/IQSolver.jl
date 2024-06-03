@@ -17,4 +17,11 @@ export l_blue3D, d_blue3D, d_red3D, d_green3D, m_yellow3D, m_blue3D
 export m_red3D, m_green3D, l_green3D, m_purple3D, m_orange3D, m_pink3D
 export game_pieces3D, game_pieces2D
 
+println("Welcome to IQSolver.jl. Here is a list of the implemented stages:")
+stages_list = sort(collect(keys(stages)))
+for stage in stages_list
+    println("- $(stage)")
+end
+println("To solve a stage, simply type 'solve(n)', where 'n' is refers to a stage")
+
 end

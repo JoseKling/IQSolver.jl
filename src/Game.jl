@@ -25,7 +25,7 @@ const m_orange3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), m_orange.symmetries[1
 const m_pink3D = Piece(map(c -> (2 * c[1], 2 * c[2], 0), m_pink.symmetries[1]), colorant"lightpink1")
 
 """
-List of all the pieces in the original game.
+List of all the pieces in the original game. This list is for the 2D variants.
 
 Their names refer to the color. It always start with 'l_', 'm_', or 'd_', for
 light, middle, and dark. To maintain the standard and to not have any conflicts
@@ -47,6 +47,11 @@ const game_pieces2D = [l_blue,
     m_orange,
     m_pink]
 
+"""
+List of all the pieces of the game, but for the 3D pyramid variant.
+
+The difference between the 3D and 2D `Piece`s is the number of symmetries.
+"""
 const game_pieces3D = [l_blue3D,
     m_blue3D,
     d_blue3D,

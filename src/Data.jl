@@ -16,8 +16,8 @@ Region{T} = Vector{T} where {T<:Cell}
 A `Piece` is the collection of all its symmetries with a correspoding color.
 A symmetry of a piece is just a `Region` (a collection of `Cell`s), which will
 be always in a normal form. This means that a symmetry always contains the `Cell`
-`(0, 0)` and the horizontal component of all the `Cell`s in it (the first index)
-is always non-negative.
+``(0, 0)`` (or ``(0,0,0)``) and the first index of all the `Cell`s in it is
+always non-negative.
 
 The implemented methods for this data type are:
 - `n_symmetries` -> number of symmetries
@@ -125,12 +125,10 @@ end
 
 ###################### Board ##################################################
 """
-A `Board` is a matrix containing either a `Piece` or `nothing`. Alias for
-`Matrix{Union{Nothing, Piece}}`.
+A `Board` is a matrix containing either a `Color` or `nothing`. Alias for
+`Matrix{Union{Nothing, Color}}`.
 
 Implemented methods for this dasta type:
-- `width` -> Returns the width of the board
-- `heigth` -> Returns the height of the board
 - `empty_region` -> Returns the collection of empty `Cell`s
 - `image` -> Plots the current state of the board
 """
@@ -162,6 +160,9 @@ with pieces with the corresponding color.
 
 If an `Int` `n` is passed, shows the configuration of the board in stage `n` of
 the original game.
+
+Can also be used to see a specific symmetry of a piece. Simply provide a `Piece`
+and an `Int` `n` to show the `n`-th symmetry of the `Piece`.
 """
 function image(board::Board{Cell2D})
     xmin = minimum([cell[1] for (cell, _) in board]) - 1
@@ -185,29 +186,37 @@ end
 
 image(stage::Int) = image(build_stage(stage))
 
-function image(piece::Piece{Cell2D})
-    p = scatter(piece.symmetries[1], color=piece.color,
+function image(piece::Piece{Cell2D}, symm_n::Int=1)
+    board = rectangular_board()
+    xmin = minimum([cell[1] for (cell, _) in board]) - 1
+    xmax = maximum([cell[1] for (cell, _) in board]) + 1
+    ymin = minimum([cell[2] for (cell, _) in board]) - 1
+    ymax = maximum([cell[2] for (cell, _) in board]) + 1
+    msize = (xmax - xmin) * 1.7
+    symm = piece.symmetries[symm_n]
+    min1 = minimum([cell[1] for cell in symm])
+    min2 = minimum([cell[2] for cell in symm])
+    symm = map(cell -> cell .- (min1, min2), symm)
+    p = scatter(collect(keys(board)), color=collect(values(board)),
         aspect_ratio=:equal, xticks=[], yticks=[], axis=([], false),
-        markersize=25, legend=false)
+        markersize=msize, legend=false,
+        xlim=(xmin, xmax), ylim=(ymin, ymax))
+    scatter!(p, symm, color=piece.color,
+        markersize=msize, legend=false)
     display(p)
 end
 
-function image(piece::Piece{Cell3D}, symm_n::Int=1; cam=(20, 30))
-    p = scatter(piece.symmetries[symm_n], color=piece.color,
-        aspect_ratio=:equal, camera=cam,
+function image(piece::Piece{Cell3D}, symm_n::Int=1)
+    symm = piece.symmetries[symm_n]
+    min3 = minimum([cell[3] for cell in symm])
+    min1 = minimum([cell[1] - cell[3] + min3 for cell in symm])
+    min2 = minimum([cell[2] - cell[3] + min3 for cell in symm])
+    symm = map(cell -> cell .- (min1, min2, min3), symm)
+    board = collect(keys(pyramid_board()))
+    p = scatter(map(c -> (c[1], c[2] + sum(12:-2:12-(2*c[3]))), board), color=:black,
+        aspect_ratio=:equal, xticks=[], yticks=[], axis=([], false),
         markersize=11, legend=false)
+    scatter!(p, map(c -> (c[1], c[2] + sum(12:-2:12-(2*c[3]))), symm),
+        color=piece.color, markersize=11)
     display(p)
 end
-
-function image(region::Region{Cell2D})
-    p = scatter(region, color=:black, aspect_ratio=:equal, markersize=10, legend=false)
-    display(p)
-end
-
-function image(region::Region{Cell3D})
-    p = scatter(map(c -> (c[1], c[2] + sum(10:-2:10-(2*c[3]))), collect(keys(pyramid_board()))), color=:black)
-    scatter!(p, map(c -> (c[1], c[2] + sum(10:-2:10-(2*c[3]))), region), color=:blue)
-    plot!(p, region, color=:black, aspect_ratio=:equal, markersize=10, legend=false)
-    display(p)
-end
-
